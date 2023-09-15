@@ -74,6 +74,12 @@ public class PlayerMove : MonoBehaviour
             _isjumping = true;
             jumpCount = 1;
         }
+        if (other.transform.CompareTag("DropPlatform") && other.transform.position.y < transform.position.y)
+        {
+            other.transform.GetComponent<DroppedPlatform>().Dropped().Forget();
+        }
+    
+
     }
 
 
