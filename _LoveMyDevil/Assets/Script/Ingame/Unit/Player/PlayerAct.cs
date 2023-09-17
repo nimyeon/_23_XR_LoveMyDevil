@@ -7,7 +7,7 @@ using UnityEngine;
 public class PlayerAct : MonoBehaviour
 {
     [SerializeField] private GameObject spray;
-
+    [SerializeField] private Transform mousePointer;
     PlayerContrl _playerContrl;
     private float _sprayGauge = 100;
     private float sprayGauge
@@ -41,7 +41,7 @@ public class PlayerAct : MonoBehaviour
         {
             isWaitForfillGauge = false;
             sprayGauge -= 0.2f;
-            Instantiate(spray, (Vector2)Camera.main.ScreenToWorldPoint(Input.mousePosition), Quaternion.identity);
+            Instantiate(spray, mousePointer.position, Quaternion.identity);
         }
     }
     async UniTaskVoid FillGaugeTask()

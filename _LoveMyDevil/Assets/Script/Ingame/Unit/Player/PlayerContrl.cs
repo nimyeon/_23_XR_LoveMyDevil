@@ -22,6 +22,7 @@ public class PlayerContrl : MonoBehaviour
             _nowSpace = Input.GetKeyDown(KeyCode.Space);
             _leftMouseButton = Input.GetMouseButton(0);
             _mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+            _skillKey = Input.GetKeyDown(KeyCode.LeftShift);
         }
     }
     public UserInput Userinput;

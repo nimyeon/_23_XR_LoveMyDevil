@@ -1,28 +1,42 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 
 public class PlayerMove : MonoBehaviour
 {
-    // ������Ʈ��
+    // 컴포넌트들
     public Rigidbody2D _playerRigidbody { get; private set; }
+    private BoxCollider2D _boxCollider2D;
     private PlayerContrl _playerControll;
 
-    //�÷��̾� ���� ��
+    [Header("플레이어 스탯")]
     [SerializeField] private float speed = 5f;
+    [Tooltip("플레이어 점프력 (보통 1000 해놓음)")]
     [SerializeField] private float jumpForce = 1000;
 
-    /// <summary>
-    /// �ִ� ���� Ƚ��
-    /// </summary>
+    [Header("플레이어 최대 점프 횟수")]
     [SerializeField] private int MAXJUMP = 2;
 
-    //��Ÿ Ʈ���ŵ�
+    [Header("플레이어 점멸 관련 변수들")]
+    [Tooltip("점멸 시간")]
+    [SerializeField] float blinkDuration = 0.5f;
+    [Tooltip("점멸 딜레이")]
+    [SerializeField] private float BlinkDelay = 1;
+    
+    //기타 트리거들
     private bool _isjumping;
     private int jumpCount = 0;
 
+    private float _playerOriSpeed;
+    private float oriColliderxsize;
+    private float oriGravity;
+    private bool isBlink;
+
     void Start()
     {
+        _boxCollider2D = GetComponent<BoxCollider2D>();
         _playerRigidbody = GetComponent<Rigidbody2D>();
         _playerControll = GetComponent<PlayerContrl>();
 
@@ -31,6 +45,16 @@ public class PlayerMove : MonoBehaviour
     void Update()
     {
         Jump();
+        if (_playerControll.Userinput.SkillKey && !isBlink&&_playerControll.Userinput.AxisState!=0)
+        {
+            Blink().Forget();
+        }
+        //_playerRigidbody.MovePosition(transform.position+(new Vector3(speed * _playerControll.Userinput.AxisState, 0) * Time.deltaTime));
+       
+    }
+
+    private void FixedUpdate()
+    {
         transform.Translate(new Vector3(speed * _playerControll.Userinput.AxisState, 0) * Time.deltaTime);
     }
 
@@ -53,6 +77,43 @@ public class PlayerMove : MonoBehaviour
 
     }
 
+    private bool isCollisionWall;
+    async UniTaskVoid Blink()
+    {
+        isBlink = true;
+        _playerOriSpeed = speed;
+        oriGravity = _playerRigidbody.gravityScale;
+        oriColliderxsize = _boxCollider2D.size.x;
+        _playerRigidbody.velocity = Vector2.zero;
+        _playerRigidbody.gravityScale = 0;
+        
+        speed = 0;
+        
+        float blinktimer = blinkDuration;
+        float blinkDelay = BlinkDelay;
+        float toPos = Mathf.Clamp(_playerControll.Userinput.AxisState,-1f,1f);
+        while (blinktimer>0)
+        {
+            blinktimer -= 0.1f;
+            if (isCollisionWall)
+            {
+                isCollisionWall = false;
+                break;
+            }
+            transform.Translate(new Vector3(_playerOriSpeed*3 * toPos, 0) * Time.deltaTime);
+            await UniTask.Yield(PlayerLoopTiming.FixedUpdate);
+        }
+        
+        speed = _playerOriSpeed;
+        _playerRigidbody.gravityScale = oriGravity;
+        while (blinkDelay > 0)
+        {
+            blinkDelay -= 0.1f;
+            await UniTask.Delay(TimeSpan.FromSeconds(0.1f));
+        }
+        isBlink = false;
+    }
+    
 
     private void OnCollisionStay2D(Collision2D other)
     {
@@ -62,6 +123,10 @@ public class PlayerMove : MonoBehaviour
         {
             _isjumping = false;
             jumpCount = 0;
+        }
+        if(other.gameObject.CompareTag("Wall"))
+        {
+            isCollisionWall = true;
         }
     }
 
@@ -78,8 +143,6 @@ public class PlayerMove : MonoBehaviour
         {
             other.transform.GetComponent<DroppedPlatform>().Dropped().Forget();
         }
-    
-
     }
 
 
