@@ -7,7 +7,6 @@ using UnityEngine;
 public class ColliderCallbackController : MonoBehaviour
 {
     public event Action<Collider2D> onColiderEnter;
-
     public event Action<Collider2D> onColiderExit;
     // Start is called before the first frame update
     void Start()

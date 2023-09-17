@@ -119,7 +119,8 @@ public class PlayerMove : MonoBehaviour
     {
         if ((other.gameObject.CompareTag("Ground")||
             other.gameObject.CompareTag("ColoredPlatform")||
-            other.gameObject.CompareTag("DropPlatform")) && other.contacts[1].normal.y > 0.7f)
+            other.gameObject.CompareTag("DropPlatform")||
+            other.gameObject.CompareTag("Platform")) && other.contacts[1].normal.y > 0.7f)
         {
             _isjumping = false;
             jumpCount = 0;

@@ -1,5 +1,7 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 
 public class ColoredPlatform : MonoBehaviour
@@ -15,6 +17,15 @@ public class ColoredPlatform : MonoBehaviour
     private float max = 8;
     private float curfillingAmount = 0;
     [SerializeField] private Transform _mask;
+
+    [Header("사라지는 속도(기본값 : 0.1)")]
+    [SerializeField]private float disappearFigure = 0.1f;
+        
+    [Header("사라질 때 까지 걸리는 시간(초 단위)")]
+    [SerializeField]private float disappearDelay = 2.5f;
+    
+
+    private bool isDone = false;
     private void Start()
     {
         _collider = GetComponent<BoxCollider2D>();
@@ -28,6 +39,7 @@ public class ColoredPlatform : MonoBehaviour
         OnSprayHit();
     }
 
+    // ReSharper disable Unity.PerformanceAnalysis
     void OnSprayHit()
     {
         Collider2D[] hit = Physics2D.OverlapBoxAll(transform.position,_scale,0);
@@ -37,32 +49,75 @@ public class ColoredPlatform : MonoBehaviour
             {
                 i.GetComponent<CircleCollider2D>().enabled = false;
                 PaintedPlatform();
+                if(!isDisapper)
+                    disappearFillAmount().Forget();
+                if(!isDelay)
+                    TaskDelay().Forget();
             }
         }
     }
 
-    void PaintedPlatform()
+    bool PaintedPlatform(bool addAmount = true,float amount = 0.1f)
     {
-        if(!_collider.enabled) 
+        if (!_collider.enabled)
             _collider.enabled = true;
-        curfillingAmount += 0.1f;
-        if (Mathf.Abs(curfillingAmount - max) <= 0.008f)
+        curfillingAmount += addAmount ? amount: -amount;
+        if (Mathf.Abs(curfillingAmount - max) <= 0.008f&&addAmount)
         {
+            curfillingAmount = max;
             _collider.size = new Vector2(_collider.size.x, 1);
             _collider.offset = new Vector2(_collider.offset.x, 0);
-            _mask.localPosition = new Vector3(_mask.localPosition.x,0);
-            Destroy(this);
+            _mask.localPosition = new Vector3(_mask.localPosition.x, 0);
+            return false;
+        }
+        if (curfillingAmount < 0)
+        {
+            _collider.size = new Vector2(_collider.size.x, 0);
+            _collider.offset = new Vector2(_collider.offset.x, 0.5f);
+            _mask.localScale = new Vector2(_mask.localScale.x, 0);
+            _mask.localPosition = new Vector2(_mask.localPosition.x, -0.5f);
+            return false;
         }
         // 크기 조절
-        float newSize = Mathf.Lerp(0, 1.0f, curfillingAmount/max);
-        _collider.size = new Vector2(_collider.size.x, newSize);
+        float newSize = Mathf.Lerp(0, 1.0f, curfillingAmount / max);
 
+        _collider.size = new Vector2(_collider.size.x, newSize);
+        _mask.localScale = new Vector2(_mask.localScale.x, newSize);
+        
         // Offset 계산
         float newOffset = initialYOffset + (ratio * (newSize - initialSizeY));
         newOffset = Mathf.Clamp(newOffset, initialYOffset, maxHeight);
 
         // Offset 값 설정
         _collider.offset = new Vector2(_collider.offset.x, newOffset);
-        _mask.localPosition = new Vector2(_mask.localPosition.x, newSize-1);
+        _mask.localPosition = new Vector2(_mask.localPosition.x, newOffset);
+
+        return true;
+    }
+
+    private bool isDisapper = false;
+    private bool isDelay;
+    async UniTaskVoid disappearFillAmount()
+    {
+        isDisapper = true;
+        while (true)
+        {
+            if(!isDelay)
+            {if (!PaintedPlatform(false,disappearFigure))break;}
+            await UniTask.Delay(TimeSpan.FromSeconds(0.02f));
+        }
+        isDisapper = false;
+    }
+    
+    async UniTaskVoid TaskDelay()
+    {
+        isDelay = true;
+        float timer = disappearDelay;
+        while(timer>0)
+        {
+            timer -= 0.1f;
+            await UniTask.Delay(TimeSpan.FromSeconds(0.1f));
+        }
+        isDelay = false;
     }
 }

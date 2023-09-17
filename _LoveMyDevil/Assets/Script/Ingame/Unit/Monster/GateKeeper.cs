@@ -16,11 +16,14 @@ public class GateKeeper : MonoBehaviour
     private int focus = -1;
 
     //중력
+    [Header("점프 시 적용되는 중력 값(기본값 : 5)")]
     [SerializeField] private float _gravity = 5;
 
     //뛰는 각도
+    [Header("점프 각도(기본값 : 45)")]
     [SerializeField] float Degree = 45;
     //뛰는 힘
+    [Header("뛰는 힘(기본값 : 3000)")]
     [SerializeField] float JumpForce = 3000;
     void Start()
     {
@@ -37,8 +40,7 @@ public class GateKeeper : MonoBehaviour
     void Jump()
     {
         _rigidbody.gravityScale = _gravity;
-        Debug.Log(D9Extension.DegreeToVector2(Degree + (focus==-1?90:0)));
-        _rigidbody.AddForce(D9Extension.DegreeToVector2(Degree + (focus==-1?90:0))*3000);    
+        _rigidbody.AddForce(D9Extension.DegreeToVector2(Degree + (focus==-1?90:0))*JumpForce);    
     }
 
     private void OnCollisionEnter2D(Collision2D other)
